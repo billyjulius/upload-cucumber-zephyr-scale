@@ -1,0 +1,30 @@
+name: 'Upload Cucumber to Zephyr Scale'
+description: 'Upload cucumber JSON report to Zephyr Scale API'
+inputs:
+  zephyr-api-key:
+    description: 'Zephyr Scale API key in Jira'
+    required: true
+  project-key:
+    description: 'Project Jira key'
+    required: true
+  file-path:
+    description: 'Cucumber JSON file path'
+    required: true
+# outputs:
+#   random-number:
+#     description: "Random number"
+#     value: ${{ steps.random-number-generator.outputs.random-id }}
+runs:
+  using: "composite"
+  steps:
+    - name: Compressing Cucumber JSON to ZIP
+      run: zip result.zip ${{ inputs.file-path }}
+      shell: bash
+    - name: Sending result to Zephyr Scale API
+      run: |
+        curl --request POST \
+            --url 'https://api.adaptavist.io/tm4j/v2/automations/executions/cucumber?projectKey=${{ inputs.project-key }}&autoCreateTestCases=false' \
+            --header 'Authorization: Bearer ${{ inputs.zephyr-api-key }}' \
+            --header 'content-type: multipart/form-data' \
+            --form "file=result.zip;type=application/x-zip-compressed"
+      shell: bash
